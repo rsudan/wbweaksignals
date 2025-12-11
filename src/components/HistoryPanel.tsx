@@ -95,7 +95,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onLoadScan }) => {
           {scans.map((scan) => (
             <div
               key={scan.id}
-              onClick={(e) => {
+              onClick={() => {
                 if (editingId !== scan.id) {
                   console.log('Loading scan:', scan.title, scan);
                   onLoadScan(scan);

@@ -216,7 +216,7 @@ const MOCK_SIGNALS_POOL: Omit<WeakSignal, 'id'>[] = [
 ];
 
 export const generateMockSignals = (params: SearchParams): WeakSignal[] => {
-  const { domain, geography, timeline } = params;
+  const { domain, geography } = params;
 
   const relevantSignals = MOCK_SIGNALS_POOL.filter(signal => {
     const domainMatch = signal.title.toLowerCase().includes(domain.toLowerCase()) ||
