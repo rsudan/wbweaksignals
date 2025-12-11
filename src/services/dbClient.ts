@@ -1,9 +1,10 @@
-import { neon } from '@neondatabase/serverless';
+import { createClient } from '@supabase/supabase-js';
 
-const databaseUrl = import.meta.env.VITE_DATABASE_URL;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!databaseUrl) {
-  throw new Error('Missing VITE_DATABASE_URL environment variable');
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables');
 }
 
-export const sql = neon(databaseUrl);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);

@@ -1,4 +1,4 @@
-import { sql } from './dbClient';
+import { supabase } from './dbClient';
 import { Scan, SearchParams, WeakSignal } from '../types';
 
 export const saveScan = async (
@@ -8,20 +8,25 @@ export const saveScan = async (
   try {
     const defaultTitle = `${searchParams.domain} - ${searchParams.geography} (${searchParams.timeline})`;
 
-    const result = await sql`
-      INSERT INTO scans (title, domain, geography, timeline, detailed_context, signals)
-      VALUES (
-        ${defaultTitle},
-        ${searchParams.domain},
-        ${searchParams.geography},
-        ${searchParams.timeline},
-        ${searchParams.detailedContext || null},
-        ${sql.json(signals)}
-      )
-      RETURNING *
-    `;
+    const { data, error } = await supabase
+      .from('scans')
+      .insert({
+        title: defaultTitle,
+        domain: searchParams.domain,
+        geography: searchParams.geography,
+        timeline: searchParams.timeline,
+        detailed_context: searchParams.detailedContext || null,
+        signals: signals,
+      })
+      .select()
+      .single();
 
-    return result[0] as Scan;
+    if (error) {
+      console.error('Error saving scan:', error);
+      return null;
+    }
+
+    return data as Scan;
   } catch (error) {
     console.error('Error saving scan:', error);
     return null;
@@ -30,12 +35,17 @@ export const saveScan = async (
 
 export const getAllScans = async (): Promise<Scan[]> => {
   try {
-    const result = await sql`
-      SELECT * FROM scans
-      ORDER BY created_at DESC
-    `;
+    const { data, error } = await supabase
+      .from('scans')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-    return result as Scan[];
+    if (error) {
+      console.error('Error fetching scans:', error);
+      return [];
+    }
+
+    return (data as Scan[]) || [];
   } catch (error) {
     console.error('Error fetching scans:', error);
     return [];
@@ -47,11 +57,15 @@ export const updateScanTitle = async (
   newTitle: string
 ): Promise<boolean> => {
   try {
-    await sql`
-      UPDATE scans
-      SET title = ${newTitle}
-      WHERE id = ${scanId}
-    `;
+    const { error } = await supabase
+      .from('scans')
+      .update({ title: newTitle })
+      .eq('id', scanId);
+
+    if (error) {
+      console.error('Error updating scan title:', error);
+      return false;
+    }
 
     return true;
   } catch (error) {
@@ -62,10 +76,15 @@ export const updateScanTitle = async (
 
 export const deleteScan = async (scanId: string): Promise<boolean> => {
   try {
-    await sql`
-      DELETE FROM scans
-      WHERE id = ${scanId}
-    `;
+    const { error } = await supabase
+      .from('scans')
+      .delete()
+      .eq('id', scanId);
+
+    if (error) {
+      console.error('Error deleting scan:', error);
+      return false;
+    }
 
     return true;
   } catch (error) {
