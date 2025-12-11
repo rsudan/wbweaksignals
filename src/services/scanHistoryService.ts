@@ -1,4 +1,4 @@
-import { supabase } from './dbClient';
+import { supabase } from '../lib/supabase';
 import { Scan, SearchParams, WeakSignal } from '../types';
 
 export const saveScan = async (
