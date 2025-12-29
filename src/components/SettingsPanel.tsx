@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
-import { Key, FileCode, RotateCcw, Eye, EyeOff } from 'lucide-react';
+import { Key, FileCode, RotateCcw, Eye, EyeOff, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { testApiKey } from '../services/perplexityService';
 
 export const SettingsPanel: React.FC = () => {
   const { settings, updateSettings, resetPrompts } = useSettings();
@@ -12,6 +13,8 @@ export const SettingsPanel: React.FC = () => {
   const [localSourceDiversity, setLocalSourceDiversity] = useState(settings.sourceDiversity);
   const [localMetricsMethodology, setLocalMetricsMethodology] = useState(settings.metricsMethodology);
   const [saved, setSaved] = useState(false);
+  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [testError, setTestError] = useState<string>('');
 
   const handleSave = () => {
     updateSettings({
@@ -33,6 +36,28 @@ export const SettingsPanel: React.FC = () => {
     setLocalSignalDefinition(settings.signalDefinition);
     setLocalSourceDiversity(settings.sourceDiversity);
     setLocalMetricsMethodology(settings.metricsMethodology);
+  };
+
+  const handleTestApiKey = async () => {
+    if (!localApiKey) {
+      setTestStatus('error');
+      setTestError('Please enter an API key');
+      setTimeout(() => setTestStatus('idle'), 5000);
+      return;
+    }
+
+    setTestStatus('testing');
+    setTestError('');
+
+    try {
+      await testApiKey(localApiKey);
+      setTestStatus('success');
+      setTimeout(() => setTestStatus('idle'), 5000);
+    } catch (error) {
+      setTestStatus('error');
+      setTestError(error instanceof Error ? error.message : 'Connection failed');
+      setTimeout(() => setTestStatus('idle'), 5000);
+    }
   };
 
   return (
@@ -65,6 +90,28 @@ export const SettingsPanel: React.FC = () => {
                 {showApiKey ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
+
+            <button
+              type="button"
+              onClick={handleTestApiKey}
+              disabled={testStatus === 'testing' || !localApiKey}
+              className="mt-2 flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {testStatus === 'testing' && <Loader2 className="w-4 h-4 animate-spin" />}
+              {testStatus === 'success' && <CheckCircle2 className="w-4 h-4 text-green-600" />}
+              {testStatus === 'error' && <XCircle className="w-4 h-4 text-red-600" />}
+              <span>
+                {testStatus === 'testing' && 'Testing connection...'}
+                {testStatus === 'success' && 'Connection successful!'}
+                {testStatus === 'error' && 'Connection failed'}
+                {testStatus === 'idle' && 'Test Connection'}
+              </span>
+            </button>
+
+            {testStatus === 'error' && testError && (
+              <p className="text-xs text-red-600 mt-1">{testError}</p>
+            )}
+
             <p className="text-xs text-gray-500 mt-1">
               {localApiKey ? 'API key configured. Leave blank to use simulation mode.' : 'No API key set. Simulation mode will be used.'}
             </p>

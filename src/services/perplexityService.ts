@@ -8,6 +8,44 @@ interface PerplexityResponse {
   }>;
 }
 
+export const testApiKey = async (apiKey: string): Promise<void> => {
+  try {
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'sonar-pro',
+        messages: [
+          {
+            role: 'user',
+            content: 'Test',
+          },
+        ],
+        max_tokens: 10,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      if (response.status === 401) {
+        throw new Error('Invalid API key');
+      } else if (response.status === 429) {
+        throw new Error('Rate limit exceeded');
+      } else {
+        throw new Error(`API Error: ${response.status}`);
+      }
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Network error - check your connection');
+  }
+};
+
 export const searchWithPerplexity = async (
   params: SearchParams,
   apiKey: string,
